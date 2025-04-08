@@ -5,42 +5,22 @@
 ==============================================================================*/
 
 #pragma once
-#include <cstdint>
+
 #include <complex>
 
 //==============================================================================
-#if defined(_MSC_VER)
-#define FASTFOURIER_API __stdcall
- #if FASTFOURIER_DLLBUILD
-  #define FASTFOURIER_DLL_ENTRY_API extern "C" __declspec(dllexport)
- #else
-  #define FASTFOURIER_DLL_ENTRY_API extern "C" __declspec(dllimport)
- #endif
-#else
- #define FASTFOURIER_API
- #if FASTFOURIER_DLLBUILD
-  #define FASTFOURIER_DLL_ENTRY_API extern "C" __attribute__((visibility("default")))
- #else
-  #define FASTFOURIER_DLL_ENTRY_API extern "C"
- #endif
-#endif
-
-//==============================================================================
-// @internal
-FASTFOURIER_DLL_ENTRY_API void* FASTFOURIER_API __fastfourier_entry(std::size_t size);
-
-//==============================================================================
-struct FastFourier
+class FastFourier
 {
+public:
     //==============================================================================
     /** Constructor
-
+     *
         @param size number of real coefficients in transform.
     */
-    inline FastFourier(std::size_t size) : intf(static_cast<Intf*>(__fastfourier_entry(size))) {}
+    explicit FastFourier(std::size_t size);
 
     /** Destructor */
-    inline ~FastFourier()                { intf->release(); }
+    ~FastFourier();
 
     //==============================================================================
     /** Do a forward Fourier transform (real -> complex)
@@ -51,10 +31,7 @@ struct FastFourier
         @param cmplxOutput complex output coefficients. Array must have (size/2)+1 number of
                            complex coefficients. The pointer must also be SIMD aligned!
     */
-    inline void forward(const float* realInput, std::complex<float>* cmplxOutput) noexcept
-    {
-        intf->forward(realInput, cmplxOutput);
-    }
+    void forward(const float* realInput, std::complex<float>* cmplxOutput) noexcept;
 
     /** Do an inverse Fourier transform (complex -> real)
 
@@ -64,10 +41,7 @@ struct FastFourier
                            as the size parameter specified in the constructor. The pointer
                            must also be SIMD aligned!
     */
-    inline void inverse(const std::complex<float>* cmplxInput, float* realOutput) noexcept
-    {
-        intf->inverse(cmplxInput, realOutput);
-    }
+    void inverse(const std::complex<float>* cmplxInput, float* realOutput) noexcept;
 
     /** Returns the normalization factor
 
@@ -75,22 +49,13 @@ struct FastFourier
         be different. You can use this to integrate the normalization step into a multiplication
         step which you are doing anyways.
     */
-    inline float getNormalizationFactor() const noexcept
-    {
-        return intf->getNormalizationFactor();
-    }
-    
-    //==============================================================================
-#if ! FASTFOURIER_DLLBUILD
-private:
-#endif
-    struct Intf
-    {
-        virtual void FASTFOURIER_API release() = 0;
-        virtual void FASTFOURIER_API forward(const float*, std::complex<float>*) noexcept = 0;
-        virtual void FASTFOURIER_API inverse(const std::complex<float>*, float*) noexcept = 0;
-        virtual float FASTFOURIER_API getNormalizationFactor() const noexcept = 0;
-    };
+    float getNormalizationFactor() const noexcept;
 
-    Intf* intf;
+    /** Prevent copying */
+    FastFourier(const FastFourier&) = delete;
+    FastFourier& operator=(const FastFourier&) = delete;
+
+private:
+    class Impl;
+    std::unique_ptr<Impl> pImpl;
 };

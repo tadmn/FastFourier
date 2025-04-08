@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.5)
 project(FastFourier)
 
 set(CMAKE_CXX_STANDARD 14)
-set(CMAKE_CXX_FLAGS_RELEASE -Ofast)
+set(CMAKE_CXX_FLAGS_RELEASE -O3 -ffast-math)
 
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
@@ -69,25 +69,11 @@ if(APPLE)
  find_library(ACCELERATE_LIBRARY Accelerate)
 endif()
 
-if(ANDROID)
-  set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY BOTH)
-
-  if(ANDROID_ABI MATCHES "^arm.*$")
-    find_library(ne10 NAMES NE10 PATHS "ne10/${ANDROID_ABI}")
-  else()
-    set(INTEL_IPP_LIB_PATH "intel_ipp/android/${ANDROID_ABI}")
-
-    find_library(intel_ipps    NAMES ipps    PATHS ${INTEL_IPP_LIB_PATH})
-    find_library(intel_ippvm   NAMES ippvm   PATHS ${INTEL_IPP_LIB_PATH})
-    find_library(intel_ippcore NAMES ippcore PATHS ${INTEL_IPP_LIB_PATH})
-  endif()
-endif()
-
 if(CMAKE_SYSTEM_NAME MATCHES Windows)
   if (CMAKE_SIZEOF_VOID_P MATCHES "8")
-   set(INTEL_IPP_LIB_PATH "intel_ipp/windows/x86_64")
+   set(INTEL_IPP_LIB_PATH "/Program Files (x86)/Intel/oneAPI/ipp/latest/lib")
   else()
-   set(INTEL_IPP_LIB_PATH "intel_ipp/windows/x86")
+   message(FATAL_ERROR "32 bit Windows is not supported")
   endif()
 
   find_library(intel_ipps    NAMES ippsmt    PATHS ${INTEL_IPP_LIB_PATH})
@@ -95,73 +81,11 @@ if(CMAKE_SYSTEM_NAME MATCHES Windows)
   find_library(intel_ippcore NAMES ippcoremt PATHS ${INTEL_IPP_LIB_PATH})
 endif()
 
-if(CMAKE_SYSTEM_NAME MATCHES Linux)
-  if (CMAKE_SYSTEM_PROCESSOR MATCHES "x86" OR CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64")
-    if (CMAKE_SIZEOF_VOID_P MATCHES "8")
-      set(INTEL_IPP_LIB_PATH "intel_ipp/linux/x86_64")
-    else()
-      set(INTEL_IPP_LIB_PATH "intel_ipp/linux/x86")
-    endif()
-
-    find_library(intel_ipps    NAMES ipps    PATHS ${INTEL_IPP_LIB_PATH})
-    find_library(intel_ippvm   NAMES ippvm   PATHS ${INTEL_IPP_LIB_PATH})
-    find_library(intel_ippcore NAMES ippcore PATHS ${INTEL_IPP_LIB_PATH})
-  elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "^arm.*$" OR CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64")
-    find_library(ne10 NAMES NE10 PATHS "ne10/${ANDROID_ABI}")
-  else()
-    message(FATAL_ERROR "Unknown processor \"${CMAKE_SYSTEM_PROCESSOR}\"")    
-  endif()
-endif()
-
-if(CMAKE_SYSTEM_NAME MATCHES Linux)
-  set(FFT_ENGINE_LIBRARY ${intel_ipps} ${intel_ippvm} ${intel_ippcore})
-elseif(APPLE)
-   # iOS and macOS will use the system's Accelerate framework which is linked in anyway
-endif()
-
-########################################################
-############# Select the right FFT engine ##############
-########################################################
-if(ANDROID)
-  if(ANDROID_ABI MATCHES "^arm.*$")
-    set(FFT_ENGINE_LIBRARY ${ne10})
-  else()
-    set(FFT_ENGINE_LIBRARY ${intel_ipps} ${intel_ippvm} ${intel_ippcore})
-  endif()
-elseif(CMAKE_SYSTEM_NAME MATCHES Windows)
-  set(FFT_ENGINE_LIBRARY ${intel_ipps} ${intel_ippvm} ${intel_ippcore})
-elseif(CMAKE_SYSTEM_NAME MATCHES Linux)
-  if (CMAKE_SYSTEM_PROCESSOR MATCHES "x86" OR CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64")
-    set(FFT_ENGINE_LIBRARY ${intel_ipps} ${intel_ippvm} ${intel_ippcore})
-  elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "^arm.*$" OR CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64")
-    set(FFT_ENGINE_LIBRARY ${ne10})
-  else()
-    message(FATAL_ERROR "Unknown processor \"${CMAKE_SYSTEM_PROCESSOR}\"")    
-  endif()
-elseif(APPLE)
-   # iOS and macOS will use the system's Accelerate framework which is linked in anyway
-endif()
+set(FFT_ENGINE_LIBRARY ${intel_ipps} ${intel_ippvm} ${intel_ippcore})
 
 ########################################################
 ################### The main target ####################
 ########################################################
-add_library(FastFourier SHARED FastFourier.cpp FastFourier.h)
+add_library(FastFourier STATIC src/FastFourier.cpp include/FastFourier.h)
 target_link_libraries(FastFourier ${FFT_ENGINE_LIBRARY} ${ACCELERATE_LIBRARY} Threads::Threads)
-
-# on macOS/iOS we build a framework
-if(APPLE)
-    set_target_properties(FastFourier PROPERTIES FRAMEWORK TRUE)
-    set_target_properties(FastFourier PROPERTIES FRAMEWORK_VERSION A)
-    set_target_properties(FastFourier PROPERTIES MACOSX_FRAMEWORK_IDENTIFIER com.fieldingdsp.lib.FastFourier)
-   if(IOS)
-    set_target_properties(FastFourier PROPERTIES MACOSX_FRAMEWORK_INFO_PLIST ${PROJECT_SOURCE_DIR}/iOS.plist)
-   else()
-    set_target_properties(FastFourier PROPERTIES MACOSX_FRAMEWORK_INFO_PLIST ${PROJECT_SOURCE_DIR}/macOS.plist)
-   endif()
-    set_target_properties(FastFourier PROPERTIES PUBLIC_HEADER FastFourier.h)
-endif()
-
-if(CMAKE_SYSTEM_NAME MATCHES Linux)
- install(TARGETS FastFourier DESTINATION lib)
- install(FILES FastFourier.h DESTINATION include)
-endif()
+target_include_directories(FastFourier PUBLIC include)

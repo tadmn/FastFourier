@@ -1,31 +1,23 @@
 # FastFourier
 
-A simple FFT wrapper for all the major desktop and mobile OSes. This library will always wrap the fastest (& most free) FFT library for your platform.
+A simple FFT wrapper for all the major desktop and mobile OSes. This library will always wrap the fastest (& most free)
+FFT library for your platform.
 
-On Windows, x86 Linux and x86 Android, FastFourier requires Intel's IPP library. You will need to agree to Intel's IPP license yourself and place the downloaded binaries into a folder named intel_ipp. The folder should have the following structure:
+This is a fork of https://github.com/hogliux/FastFourier. The original is built as a shared library (dll), whereas
+this fork is built as a static library and is thus simplified somewhat (and doesn't require installation of the shared
+lib alongside your binaries).
 
+Currently, this fork only supports macOS and Windows x86_64.
+
+## Setup
+
+### macOS
+Nothing is required. The vDSP library (via the Accelerate framework) is already installed on all macOS systems.
+
+### Windows x86_64
+You will need to download the library files for the Intel Performance Primitives (IPP). To do this, download the Intel
+oneAPI installer from the Intel website. Use the installer to install the packages (I just install most everything to
+make it easier). The files we need should get automatically installed to:
 ```
-intel_ipp/windows/x86_64/ippsmt.lib
-intel_ipp/windows/x86_64/ippcoremt.lib
-intel_ipp/windows/x86_64/ippvmmt.lib
-intel_ipp/windows/x86/ippsmt.lib
-intel_ipp/windows/x86/ippcoremt.lib
-intel_ipp/windows/x86/ippvmmt.lib
-intel_ipp/android/x86_64/libippvm.a
-intel_ipp/android/x86_64/libippcore.a
-intel_ipp/android/x86_64/libipps.a
-intel_ipp/android/x86/libippvm.a
-intel_ipp/android/x86/libippcore.a
-intel_ipp/android/x86/libipps.a
-intel_ipp/linux/x86_64/libippvm.a
-intel_ipp/linux/x86_64/libippcore.a
-intel_ipp/linux/x86_64/libipps.a
-intel_ipp/linux/x86/libippvm.a
-intel_ipp/linux/x86/libippcore.a
-intel_ipp/linux/x86/libipps.a
+/Program Files (x86)/Intel/oneAPI/ipp/latest/lib
 ```
-
-You will also need to compile Ne10 yourself and put it into a folder with the following structure:
-
-ne10/armeabi-v7a/libNE10.a
-ne10/arm64-v8a/libNE10.a

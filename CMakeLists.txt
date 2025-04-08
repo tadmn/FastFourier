@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.5)
 project(FastFourier)
 
 set(CMAKE_CXX_STANDARD 14)
-set(CMAKE_CXX_FLAGS_RELEASE -O3 -ffast-math)
+set(CMAKE_CXX_FLAGS_RELEASE -O3)
 
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)

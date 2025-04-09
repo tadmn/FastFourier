@@ -17,7 +17,9 @@ Nothing is required. The vDSP library (via the Accelerate framework) is already 
 ### Windows x86_64
 You will need to download the library files for the Intel Performance Primitives (IPP). To do this, download the Intel
 oneAPI installer from the Intel website. Use the installer to install the packages (I just install most everything to
-make it easier). The files we need should get automatically installed to:
+make it easier). The 3 files we need should get automatically installed to:
 ```
-/Program Files (x86)/Intel/oneAPI/ipp/latest/lib
+/Program Files (x86)/Intel/oneAPI/ipp/latest/lib/ippsmt.lib
+/Program Files (x86)/Intel/oneAPI/ipp/latest/lib/ippvmmt.lib
+/Program Files (x86)/Intel/oneAPI/ipp/latest/lib/ippcoremt.lib
 ```

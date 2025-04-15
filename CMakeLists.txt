@@ -1,5 +1,5 @@
 # Copyright (c) 2020 - Fielding DSP GmbH
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.10)
 
 project(FastFourier)
 

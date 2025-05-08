@@ -71,17 +71,17 @@ endif()
 
 if(CMAKE_SYSTEM_NAME MATCHES Windows)
   if (CMAKE_SIZEOF_VOID_P MATCHES "8")
-   set(INTEL_IPP_LIB_PATH "/Program Files (x86)/Intel/oneAPI/ipp/latest/lib")
+    find_package(IPP)
+    if (IPP_FOUND)
+      set(FFT_ENGINE_LIBRARY IPP::ipps IPP::ippvm IPP::ippcore)
+      message("IPP LIBRARIES FOUND")
+    else ()
+      message("IPP LIBRARIES *NOT* FOUND")
+    endif ()
   else()
    message(FATAL_ERROR "32 bit Windows is not supported")
   endif()
-
-  find_library(intel_ipps    NAMES ippsmt    PATHS ${INTEL_IPP_LIB_PATH})
-  find_library(intel_ippvm   NAMES ippvmmt   PATHS ${INTEL_IPP_LIB_PATH})
-  find_library(intel_ippcore NAMES ippcoremt PATHS ${INTEL_IPP_LIB_PATH})
 endif()
-
-set(FFT_ENGINE_LIBRARY ${intel_ipps} ${intel_ippvm} ${intel_ippcore})
 
 ########################################################
 ################### The main target ####################

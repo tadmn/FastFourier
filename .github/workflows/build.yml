@@ -62,10 +62,6 @@ jobs:
           path: C:\Program Files (x86)\Intel
           key: ipp-v6
 
-      - name: Check IPP
-        if: runner.os == 'Windows'
-        run: ls "C:\Program Files (x86)\Intel\oneAPI\ipp\latest\lib"
-
       - name: Install Ninja (Windows)
         if: runner.os == 'Windows'
         run: choco install ninja

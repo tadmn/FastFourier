@@ -71,17 +71,26 @@ endif()
 
 if(CMAKE_SYSTEM_NAME MATCHES Windows)
   if (CMAKE_SIZEOF_VOID_P MATCHES "8")
-   set(INTEL_IPP_LIB_PATH "/Program Files (x86)/Intel/oneAPI/ipp/latest/lib")
+    find_package(IPP)
+    if (IPP_FOUND)
+#      target_link_libraries(SharedCode INTERFACE IPP::ipps IPP::ippcore IPP::ippi IPP::ippcv)
+      message("IPP LIBRARIES FOUND")
+#      target_compile_definitions(SharedCode INTERFACE PAMPLEJUCE_IPP=1)
+    else ()
+      message("IPP LIBRARIES *NOT* FOUND")
+    endif ()
+
+#   set(INTEL_IPP_LIB_PATH "/Program Files (x86)/Intel/oneAPI/ipp/latest/lib")
   else()
    message(FATAL_ERROR "32 bit Windows is not supported")
   endif()
 
-  find_library(intel_ipps    NAMES ippsmt    PATHS ${INTEL_IPP_LIB_PATH})
-  find_library(intel_ippvm   NAMES ippvmmt   PATHS ${INTEL_IPP_LIB_PATH})
-  find_library(intel_ippcore NAMES ippcoremt PATHS ${INTEL_IPP_LIB_PATH})
+#  find_library(intel_ipps    NAMES ippsmt    PATHS ${INTEL_IPP_LIB_PATH})
+#  find_library(intel_ippvm   NAMES ippvmmt   PATHS ${INTEL_IPP_LIB_PATH})
+#  find_library(intel_ippcore NAMES ippcoremt PATHS ${INTEL_IPP_LIB_PATH})
 endif()
 
-set(FFT_ENGINE_LIBRARY ${intel_ipps} ${intel_ippvm} ${intel_ippcore})
+set(FFT_ENGINE_LIBRARY IPP::ipps IPP::ippcore IPP::ippi IPP::ippcv)
 
 ########################################################
 ################### The main target ####################

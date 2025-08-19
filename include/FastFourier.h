@@ -7,6 +7,7 @@
 #pragma once
 
 #include <complex>
+#include <memory>
 
 //==============================================================================
 class FastFourier

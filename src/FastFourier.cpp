@@ -7,12 +7,15 @@
 
 #include <cassert>
 
-#if __APPLE__
- #define USE_INTEL_FFT 0
- #define USE_APPLE_FFT 1
+#if defined(__APPLE__)
+    #define USE_INTEL_FFT 0
+    #define USE_APPLE_FFT 1
 #elif defined(_WIN64)
- #define USE_INTEL_FFT 1
- #define USE_APPLE_FFT 0
+    #define USE_INTEL_FFT 1
+    #define USE_APPLE_FFT 0
+#elif defined(__linux__) && defined(__x86_64__)
+    #define USE_INTEL_FFT 1
+    #define USE_APPLE_FFT 0
 #endif
 
 //==============================================================================
@@ -39,6 +42,7 @@
 //==============================================================================
 #if USE_INTEL_FFT
 #include <vector>
+#include <cstdint>
 class FastFourier::Impl
 {
 public:

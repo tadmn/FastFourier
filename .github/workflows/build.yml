@@ -1,7 +1,7 @@
 name: Spectrum
 
 on:
-  workflow_dispatch: # lets you run a build from the UI
+  workflow_dispatch: # Lets you run a build from the UI
   push:
   pull_request:
 
@@ -16,7 +16,6 @@ env:
   HOMEBREW_NO_INSTALL_CLEANUP: 1
   SCCACHE_GHA_ENABLED: true
   SCCACHE_CACHE_MULTIARCH: 1
-  IPP_DIR: C:\Program Files (x86)\Intel\oneAPI\ipp\latest\lib\cmake\ipp
 
 defaults:
   run:
@@ -24,22 +23,31 @@ defaults:
 
 jobs:
   build_and_test:
-    # don't double run on PRs
+    # Don't double run on PRs
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.event.pull_request.base.repo.full_name
     name: ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
     strategy:
-      fail-fast: false # show all errors for each platform (vs. cancel jobs on error)
+      fail-fast: false # Show all errors for each platform (vs. cancel jobs on error)
       matrix:
         include:
           - name: macOS
             os: macos-latest
           - name: Windows
             os: windows-latest
+          - name: Linux
+            os: ubuntu-24.04
 
     steps:
       # Setup MSVC toolchain and developer command prompt (Windows)
       - uses: ilammy/msvc-dev-cmd@v1
+
+      # Use clang on Linux so we don't introduce a 3rd compiler (Windows and macOS use MSVC and Clang)
+      - name: Download IPP (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          wget -O- https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB | gpg --dearmor | sudo tee /usr/share/keyrings/oneapi-archive-keyring.gpg > /dev/null
+          echo "deb [signed-by=/usr/share/keyrings/oneapi-archive-keyring.gpg] https://apt.repos.intel.com/oneapi all main" | sudo tee /etc/apt/sources.list.d/oneAPI.list
 
       - name: Cache IPP (Windows)
         if: runner.os == 'Windows'
@@ -67,9 +75,13 @@ jobs:
         if: runner.os == 'Windows'
         run: choco install ninja
 
-      - name: Install macOS Deps
+      - name: Install macOS dependencies
         if: ${{ matrix.name == 'macOS' }}
         run: brew install ninja
+
+      - name: Install Linux dependencies
+        if: runner.os == 'Linux'
+        run: sudo apt update && sudo apt install intel-oneapi-ipp-devel
 
       - name: Checkout code
         uses: actions/checkout@v4

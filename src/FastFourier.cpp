@@ -10,12 +10,19 @@
 #if defined(__APPLE__)
     #define USE_INTEL_FFT 0
     #define USE_APPLE_FFT 1
+    #define USE_PFFFT 0
 #elif defined(_WIN64)
     #define USE_INTEL_FFT 1
     #define USE_APPLE_FFT 0
+    #define USE_PFFFT 0
 #elif defined(__linux__) && defined(__x86_64__)
     #define USE_INTEL_FFT 1
     #define USE_APPLE_FFT 0
+    #define USE_PFFFT 0
+#elif defined(__EMSCRIPTEN__)
+    #define USE_INTEL_FFT 0
+    #define USE_APPLE_FFT 0
+    #define USE_PFFFT 1
 #endif
 
 //==============================================================================
@@ -161,6 +168,79 @@ public:
 private:
     int order;
     FFTSetup fftApple;
+};
+
+//==============================================================================
+#elif USE_PFFFT
+#include <pffft.h>
+#include <algorithm>
+
+class FastFourier::Impl
+{
+public:
+    Impl(size_t size)
+        : n(size),
+          setup(pffft_new_setup(static_cast<int>(size), PFFFT_REAL)),
+          buffer(static_cast<float*>(pffft_aligned_malloc(size * sizeof(float)))),
+          work(static_cast<float*>(pffft_aligned_malloc(size * sizeof(float))))
+    {
+        assert((size & (size - 1)) == 0);
+        assert(setup != nullptr);
+    }
+
+    ~Impl()
+    {
+        pffft_aligned_free(work);
+        pffft_aligned_free(buffer);
+        pffft_destroy_setup(setup);
+    }
+
+    // pffft packs the DC & Nyquist bins, which are both real, into the first complex value. The
+    // transform goes through an internal buffer, as pffft needs SIMD aligned buffers.
+    void forward(const float* realInput, std::complex<float>* cmplxOutput) noexcept
+    {
+        std::copy_n(realInput, n, buffer);
+        pffft_transform_ordered(setup, buffer, buffer, work, PFFFT_FORWARD);
+
+        const auto numBins = n / 2;
+        cmplxOutput[0] = std::complex<float>(buffer[0], 0.0f);
+        cmplxOutput[numBins] = std::complex<float>(buffer[1], 0.0f);
+        for (size_t i = 1; i < numBins; ++i)
+            cmplxOutput[i] = std::complex<float>(buffer[2 * i], buffer[2 * i + 1]);
+    }
+
+    void inverse(const std::complex<float>* cmplxInput, float* realOutput) noexcept
+    {
+        const auto numBins = n / 2;
+        buffer[0] = cmplxInput[0].real();
+        buffer[1] = cmplxInput[numBins].real();
+        for (size_t i = 1; i < numBins; ++i)
+        {
+            buffer[2 * i] = cmplxInput[i].real();
+            buffer[2 * i + 1] = cmplxInput[i].imag();
+        }
+
+        pffft_transform_ordered(setup, buffer, buffer, work, PFFFT_BACKWARD);
+        std::copy_n(buffer, n, realOutput);
+    }
+
+    float getNormalizationFactor() const noexcept
+    {
+        return static_cast<float>(n);
+    }
+
+    //==============================================================================
+    Impl(const Impl&) = delete;
+    Impl(Impl&&) = delete;
+    Impl& operator=(const Impl&) = delete;
+    Impl& operator=(Impl&&) = delete;
+
+    //==============================================================================
+private:
+    size_t n;
+    PFFFT_Setup* setup;
+    float* buffer;
+    float* work;
 };
 
 #else

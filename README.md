@@ -7,7 +7,7 @@ This is a fork of https://github.com/hogliux/FastFourier. The original is built 
 this fork is built as a static library and is thus simplified somewhat (and doesn't require installation of the shared
 lib alongside your binaries).
 
-This fork supports macOS, Windows x86_64, & Linux x86_64.
+This fork supports macOS, Windows x86_64, Linux x86_64, & WebAssembly (Emscripten).
 
 ## Setup
 
@@ -36,3 +36,8 @@ sudo apt install intel-oneapi-ipp-devel
 ```
 
 The files should get installed to `/opt/intel/oneapi/ipp`.
+
+### WebAssembly (Emscripten)
+Nothing is required. [pffft](https://github.com/marton78/pffft) gets downloaded and built with WebAssembly SIMD
+when configuring with `emcmake cmake`. Browsers have supported WebAssembly SIMD since Chrome 91, Firefox 89 and
+Safari 16.4.

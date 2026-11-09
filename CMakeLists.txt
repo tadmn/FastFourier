@@ -58,6 +58,21 @@ endif()
 ########################################################
 if(APPLE)
  find_library(FFT_ENGINE_LIBRARY Accelerate)
+elseif(EMSCRIPTEN)
+  # pffft, built from its sources rather than its own CMake project, which also builds tests & installs
+  include(FetchContent)
+  FetchContent_Declare(pffft
+    GIT_REPOSITORY https://github.com/marton78/pffft.git
+    GIT_TAG aa16fd3db58de4ba5dae8b0438440bb9da46b6fa
+    SOURCE_SUBDIR none
+  )
+  FetchContent_MakeAvailable(pffft)
+
+  add_library(pffft STATIC ${pffft_SOURCE_DIR}/src/pffft.c ${pffft_SOURCE_DIR}/src/pffft_common.c)
+  target_include_directories(pffft PUBLIC ${pffft_SOURCE_DIR}/include/pffft)
+  target_compile_definitions(pffft PRIVATE _USE_MATH_DEFINES PFFFT_ENABLE_WASM)
+  target_compile_options(pffft PRIVATE -msimd128)
+  set(FFT_ENGINE_LIBRARY pffft)
 elseif(CMAKE_SYSTEM_NAME MATCHES Windows)
   if (CMAKE_SIZEOF_VOID_P MATCHES "8")
     set(IPP_DIR "C:/Program Files (x86)/Intel/oneAPI/ipp/latest/lib/cmake/ipp")
@@ -100,5 +115,10 @@ endif()
 ################### The main target ####################
 ########################################################
 add_library(FastFourier STATIC src/FastFourier.cpp include/FastFourier.h)
-target_link_libraries(FastFourier ${FFT_ENGINE_LIBRARY} Threads::Threads)
+target_link_libraries(FastFourier ${FFT_ENGINE_LIBRARY})
+
+# Threads would build WebAssembly with shared memory, which pages can only use with cross-origin isolation
+if(NOT EMSCRIPTEN)
+  target_link_libraries(FastFourier Threads::Threads)
+endif()
 target_include_directories(FastFourier PUBLIC include)
